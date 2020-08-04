@@ -11,9 +11,9 @@ order: 2
 
 - [Introduction](#introduction)
 
-- [Mutation Phases](#mutation-phases)
+- [Mutation phases](#mutation-phases)
 
-  - [Access Control Phase](#access-control-phase)
+  - [Access control phase](#access-control-phase)
 
     - [1. Check List Access (create/update/delete/authenticate)](#1-check-list-access-createupdatedeleteauthenticate)
     - [2. Get Item(s) (update/delete)](#2-get-items-updatedelete)
@@ -22,13 +22,11 @@ order: 2
   - [Operational Phase](#operational-phase)
 
     - [1. Resolve Defaults (create)](#1-resolve-defaults-create)
-    - [2a. Resolve Relationship (create/update)](#2a-resolve-relationship-createupdate)
-    - [2b. Register Backlinks (delete)](#2b-register-backlinks-delete)
+    - [2. Resolve Relationship (create/update)](#2-resolve-relationship-createupdate)
     - [3. Resolve Input (create/update/authenticate)](#3-resolve-input-createupdateauthenticate)
     - [4. Validate Data (create/update/delete/authenticate)](#4-validate-data-createupdatedeleteauthenticate)
     - [5. Before Operation (create/update/delete/authenticate)](#5-before-operation-createupdatedeleteauthenticate)
     - [6. Database Operation (create/update/delete/authenticate)](#6-database-operation-createupdatedeleteauthenticate)
-    - [7. Resolve Backlinks (create/update/delete)](#7-resolve-backlinks-createupdatedelete)
     - [8. After Operation (create/update/delete/authenticate)](#8-after-operation-createupdatedeleteauthenticate)
 
 - [Summary](#summary)
