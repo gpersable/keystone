@@ -84,16 +84,20 @@ const getItem = async ({ keystone, listKey, itemId, returnFields = `id`, context
 const getItems = async ({
   keystone,
   listKey,
+  first,
+  skip,
   where = {},
   pageSize = 500,
   returnFields = `id`,
+  sortBy = 'id_ASC',
   context,
 }) => {
-  const { listQueryName, whereInputName } = keystone.lists[listKey].gqlNames;
-  const query = `query ($first: Int!, $skip: Int!, $where: ${whereInputName}) { ${listQueryName}(first: $first, skip: $skip, where: $where) { ${returnFields} }  }`;
+  const { listQueryName, whereInputName, listSortName } = keystone.lists[listKey].gqlNames;
+  const query = `query ($first: Int!, $skip: Int!, $sortBy: [${listSortName}!], $where: ${whereInputName}) { ${listQueryName}(first: $first, skip: $skip, sortBy: $sortBy, where: $where) { ${returnFields} }  }`;
 
-  let skip = 0;
   let latestResult;
+  let _skip = skip || 0;
+  let _first = first || pageSize;
   const allItems = [];
 
   do {
@@ -101,14 +105,18 @@ const getItems = async ({
       keystone,
       query,
       context,
-      variables: { first: pageSize, skip, where },
+      variables: { first: _first, skip: _skip, sortBy, where },
     });
 
     latestResult = response[Object.keys(response || {})[0]];
 
     allItems.push(...latestResult);
 
-    skip += pageSize;
+    if (first && first < pageSize) {
+      break;
+    }
+
+    _skip += pageSize;
   } while (latestResult.length);
 
   return allItems;

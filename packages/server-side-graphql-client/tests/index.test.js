@@ -14,7 +14,8 @@ const {
 
 const testData = [{ data: { name: 'test', age: 30 } }, { data: { name: 'test2', age: 40 } }];
 
-const seedDb = ({ keystone }) => createItems({ keystone, listKey: 'Test', items: testData });
+const seedDb = ({ keystone, items = testData }) =>
+  createItems({ keystone, listKey: 'Test', items });
 
 function setupKeystone(adapterName) {
   return setupServer({
@@ -166,6 +167,93 @@ multiAdapterRunners().map(({ runner, adapterName }) =>
           });
 
           expect(allItems).toEqual([{ name: 'test' }]);
+        })
+      );
+      test(
+        'sortBy: Should get all sorted items',
+        runner(setupKeystone, async ({ keystone }) => {
+          // Seed the db
+          await seedDb({ keystone });
+
+          const getItemsBySortOrder = sortBy =>
+            getItems({
+              keystone,
+              listKey: 'Test',
+              returnFields: 'name, age',
+              sortBy,
+            });
+
+          const allItemsAscAge = await getItemsBySortOrder('age_ASC');
+          const allItemsDescAge = await getItemsBySortOrder('age_DESC');
+          expect(allItemsAscAge[0]).toEqual(testData.map(x => x.data)[0]);
+          expect(allItemsDescAge[0]).toEqual(testData.map(x => x.data)[1]);
+        })
+      );
+      test(
+        'first: Should get first specfied number of items',
+        runner(setupKeystone, async ({ keystone }) => {
+          // Seed the db with 10 user items
+          const userItems = Array.from({ length: 10 }, (_, i) => ({
+            data: {
+              name: `User-${i}`,
+              age: i + 1,
+            },
+          }));
+          await seedDb({ keystone, items: userItems });
+          const firstFiveItems = await getItems({
+            keystone,
+            listKey: 'Test',
+            returnFields: 'name, age',
+            first: 5,
+          });
+          expect(firstFiveItems.length).toEqual(5);
+        })
+      );
+      test(
+        'skip: Should skip the specfied number of items, and return the rest',
+        runner(setupKeystone, async ({ keystone }) => {
+          // Seed the db with 10 user items
+          const userItems = Array.from({ length: 10 }, (_, i) => ({
+            data: {
+              name: `User-${i}`,
+              age: i + 1,
+            },
+          }));
+          await seedDb({ keystone, items: userItems });
+          const skip = 3;
+          const restItems = await getItems({
+            keystone,
+            listKey: 'Test',
+            returnFields: 'name, age',
+            skip,
+          });
+          expect(restItems.length).toEqual(userItems.length - skip);
+        })
+      );
+      test(
+        'combination of sort and pagination',
+        runner(setupKeystone, async ({ keystone }) => {
+          // Seed the db with 10 user items
+          const userItems = Array.from({ length: 10 }, (_, i) => ({
+            data: {
+              name: `User-${i + 1}`,
+              age: i + 1,
+            },
+          }));
+          await seedDb({ keystone, items: userItems });
+          const skip = 3;
+          const first = 4;
+          const sortBy = 'age_DESC';
+          const restItems = await getItems({
+            keystone,
+            listKey: 'Test',
+            returnFields: 'name, age',
+            first,
+            skip,
+            sortBy,
+          });
+          expect(restItems.length).toEqual(first);
+          expect(restItems[0]).toEqual({ name: 'User-7', age: 7 });
         })
       );
     });
