@@ -386,7 +386,7 @@ const afterDelete = ({
 
 The return of `resolveAuthInput` can be a `Promise` or an `Object`.
 It should resolve to the same structure as `originalInput`.
-The result is passed to [the next function in the execution order](/docs/guides/hooks.md#hook-execution-order).
+The result is passed to [the next function in the execution order](/docs/guides/hooks.md#intra-hook-execution-order).
 
 #### Arguments
 

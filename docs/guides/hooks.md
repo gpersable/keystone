@@ -19,7 +19,7 @@ There are several categorisations that can be applied to hooks and are useful fo
 
 ### Stage
 
-Keystone defines several _stages_ within the [hook execution order](#execution-order).
+Keystone defines several _stages_ within the [hook execution order](#intra-hook-execution-order).
 These stages are intended to be used for different purposes; they help organise your hook functionality.
 
 - Input resolution - modify the values supplied
