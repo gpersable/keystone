@@ -137,7 +137,7 @@ A few of the main stumbling blocks are:
 - As per the table above, the `delete` operations have no hook set for the _input resolution_ stage.
   This operation doesn't accept any input (other than the target IDs).
 - Keystone does not currently implement `read` hooks.
-- field type hooks and field hooks are run in parallel.
+- Field type hooks and field hooks are run in parallel.
 - The `authenticate` hook sets are unique in that they can only be added at the _list_ level.
 
 These nuances aren't bugs per se -- they generally exist for good reason --

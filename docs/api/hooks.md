@@ -51,15 +51,15 @@ keystone.createList('User', {
     afterChange: async (...) => {...},
 
     // Hooks for delete operations
-    validateDelete: async (...) => { ... },
-    beforeDelete: async (...) => { ... },
-    afterDelete: async (...) => { ... },
+    validateDelete: async (...) => {...},
+    beforeDelete: async (...) => {...},
+    afterDelete: async (...) => {...},
 
     // Hooks for authenticate operations
-    resolveAuthInput: async (...) => { ... },
-    validateAuthInput: async (...) => { ... },
-    beforeAuth: async (...) => { ... },
-    afterAuth: async (...) => { ... },
+    resolveAuthInput: async (...) => {...},
+    validateAuthInput: async (...) => {...},
+    beforeAuth: async (...) => {...},
+    afterAuth: async (...) => {...},
   },
 });
 ```
@@ -531,12 +531,7 @@ const afterAuth = ({
 
 ---
 
-### Query Helper
-
-Perform a GraphQL query, optionally _within_ the context of the current request.
-It returns a `Promise<Object>` containing the standard GraphQL `errors` and `data` properties.
-
-#### Argument
+### Running GraphQL Queries From Hook
 
 If you need to execute a GraphQL query from within your hook function you can use `context.executeGraphQL()`.
 See the docs on [server-side graphql operations](/docs/discussions/server-side-graphql.md) for more details.
