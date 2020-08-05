@@ -182,10 +182,10 @@ class ListAuthProvider {
   async _unauthenticateMutation(context) {
     const gqlName = this.gqlNames.unauthenticateMutationName;
     await this.checkAccess(context, 'mutation', { gqlName });
-
-    // beforeAuth()
+    // const operation = 'unauthenticate'
+    // beforeUnauth({ operation, context })
     const { listKey, itemId } = await context.endAuthedSession();
-    // afterAuth({ listKey, itemid })
+    // afterUnauth({ operation, context, listKey, itemid })
     return { success: true };
   }
 
