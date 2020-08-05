@@ -138,7 +138,26 @@ class ListAuthProvider {
   async _authenticateMutation(args, context) {
     const gqlName = this.gqlNames.authenticateMutationName;
     await this.checkAccess(context, 'mutation', { gqlName });
-
+    // const operation = 'authenticate';
+    // const originalInput = args;
+    // const resolvedData = resolveAuthInput({
+    //   operation,
+    //   originalInput,
+    //   context,
+    // })
+    // validateAuthInput({
+    //   operation,
+    //   originalInput,
+    //   resolvedData,
+    //   context,
+    //   addValidationError,
+    // })
+    // beforeAuth({
+    //   operation,
+    //   originalInput,
+    //   resolvedData,
+    //   context,
+    // })
     // Verify incoming details
     const { item, success, message } = await this.authStrategy.validate(args, context);
     if (!success) {
@@ -146,6 +165,16 @@ class ListAuthProvider {
     }
 
     const token = await context.startAuthedSession({ item, list: this.list });
+    // afterAuth({
+    //   operation,
+    //   item,
+    //   success,
+    //   message,
+    //   token,
+    //   originalInput,
+    //   resolvedData,
+    //   context,
+    //})
     return { token, item };
   }
 
@@ -153,7 +182,9 @@ class ListAuthProvider {
     const gqlName = this.gqlNames.unauthenticateMutationName;
     await this.checkAccess(context, 'mutation', { gqlName });
 
+    // beforeAuth()
     await context.endAuthedSession();
+    // afterAuth()
     return { success: true };
   }
 

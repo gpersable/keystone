@@ -395,7 +395,6 @@ The result is passed to [the next function in the execution order](/docs/guides/
 | `operation`     | `String`         | The operation being performed (`authenticate` in this case)                                                                   |
 | `originalInput` | `Object`         | The data received by the GraphQL mutation                                                                                     |
 | `context`       | `Apollo Context` | The [Apollo `context` object](https://www.apollographql.com/docs/apollo-server/essentials/data.html#context) for this request |
-| `actions`       | `Object`         | Contains a `query` functions that queries the list within the current operations context, see [Query Helper](#query-helper)   |
 
 #### Usage
 
@@ -406,7 +405,6 @@ const resolveAuthInput = ({
   operation,
   originalInput,
   context,
-  actions,
 }) => {
   // Input resolution logic
   // Object returned is used in place of resolvedData
@@ -426,14 +424,13 @@ Return values are ignored.
 
 #### Arguments
 
-| Argument                  | Type             | Description                                                                                                                   |
-| :------------------------ | :--------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| `operation`               | `String`         | The operation being performed (`authenticate` in this case)                                                                   |
-| `originalInput`           | `Object`         | The data received by the GraphQL mutation                                                                                     |
-| `resolvedData`            | `Object`         | The data received by the GraphQL mutation or returned by `resolveAuthInput`, if defined                                       |
-| `context`                 | `Apollo Context` | The [Apollo `context` object](https://www.apollographql.com/docs/apollo-server/essentials/data.html#context) for this request |
-| `actions`                 | `Object`         | Contains a `query` functions that queries the list within the current operations context, see [Query Helper](#query-helper)   |
-| `addFieldValidationError` | `Function`       | Used to set a field validation error; accepts a `String`                                                                      |
+| Argument             | Type             | Description                                                                                                                   |
+| :------------------- | :--------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| `operation`          | `String`         | The operation being performed (`authenticate` in this case)                                                                   |
+| `originalInput`      | `Object`         | The data received by the GraphQL mutation                                                                                     |
+| `resolvedData`       | `Object`         | The data received by the GraphQL mutation or returned by `resolveAuthInput`, if defined                                       |
+| `context`            | `Apollo Context` | The [Apollo `context` object](https://www.apollographql.com/docs/apollo-server/essentials/data.html#context) for this request |
+| `addValidationError` | `Function`       | Used to set a validation error; accepts a `String`                                                                            |
 
 #### Usage
 
@@ -445,7 +442,6 @@ const validateAuthInput = ({
   originalInput,
   resolvedData,
   context,
-  actions,
   addFieldValidationError,
 }) => {
   // Throw error objects or register validation errors with addFieldValidationError(<String>)
@@ -471,7 +467,6 @@ Return values are ignored.
 | `originalInput` | `Object`         | The data received by the GraphQL mutation                                                                                     |
 | `resolvedData`  | `Object`         | The data received by the GraphQL mutation or returned by `resolveAuthInput`, if defined                                       |
 | `context`       | `Apollo Context` | The [Apollo `context` object](https://www.apollographql.com/docs/apollo-server/essentials/data.html#context) for this request |
-| `actions`       | `Object`         | Contains a `query` functions that queries the list within the current operations context, see [Query Helper](#query-helper)   |
 
 #### Usage
 
@@ -483,7 +478,6 @@ const beforeAuth = ({
   originalInput,
   resolvedData,
   context,
-  actions,
 }) => {
   // Perform side effects
   // Return values ignored
@@ -514,7 +508,6 @@ Return values are ignored.
 | `originalInput` | `Object`         | The data received by the GraphQL mutation                                                                                     |
 | `resolvedData`  | `Object`         | The data received by the GraphQL mutation or returned by `resolveAuthInput`, if defined                                       |
 | `context`       | `Apollo Context` | The [Apollo `context` object](https://www.apollographql.com/docs/apollo-server/essentials/data.html#context) for this request |
-| `actions`       | `Object`         | Contains a `query` functions that queries the list within the current operations context, see [Query Helper](#query-helper)   |
 
 #### Usage
 
@@ -530,7 +523,6 @@ const afterAuth = ({
   originalInput,
   resolvedData,
   context,
-  actions,
 }) => {
   // Perform side effects
   // Return values ignored
@@ -538,15 +530,6 @@ const afterAuth = ({
 ```
 
 ---
-
-## `actions` Argument
-
-All hooks receive an `actions` object as an argument.
-It contains helper functionality for accessing the GraphQL schema, optionally _within_ the context of the current request.
-When used, this context reuse causes access control to be applied as though the caller themselves initiated an operation.
-It can therefore be useful for performing additional operations on behalf of the caller.
-
-The `actions` object currently contains a single function: `query`.
 
 ### Query Helper
 
