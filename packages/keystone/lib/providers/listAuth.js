@@ -159,6 +159,7 @@ class ListAuthProvider {
     //   context,
     // })
     // Verify incoming details
+    // const { item, success, message } = await this.authStrategy.validate(resolvedData, context);
     const { item, success, message } = await this.authStrategy.validate(args, context);
     if (!success) {
       throw new Error(message);
@@ -183,8 +184,8 @@ class ListAuthProvider {
     await this.checkAccess(context, 'mutation', { gqlName });
 
     // beforeAuth()
-    await context.endAuthedSession();
-    // afterAuth()
+    const { listKey, itemId } = await context.endAuthedSession();
+    // afterAuth({ listKey, itemid })
     return { success: true };
   }
 
