@@ -4,6 +4,7 @@ const memoize = require('micro-memoize');
 const falsey = require('falsey');
 const createCorsMiddleware = require('cors');
 const { execute, print } = require('graphql');
+const { GraphQLUpload } = require('graphql-upload');
 const {
   resolveAllKeys,
   arrayToObject,
@@ -26,6 +27,9 @@ const { List } = require('../ListTypes');
 const { DEFAULT_DIST_DIR } = require('../../constants');
 const { CustomProvider, ListAuthProvider, ListCRUDProvider } = require('../providers');
 const { formatError } = require('./format-error');
+
+// composePlugins([f, g, h])(o, e) = h(g(f(o, e), e), e)
+const composePlugins = fns => (o, e) => fns.reduce((acc, fn) => fn(acc, e), o);
 
 module.exports = class Keystone {
   constructor({
@@ -194,7 +198,7 @@ module.exports = class Keystone {
     };
   }
 
-  createContext({ schemaName = 'public', authentication = {}, skipAccessControl = false }) {
+  createContext({ schemaName = 'public', authentication = {}, skipAccessControl = false } = {}) {
     const context = {
       schemaName,
       authedItem: authentication.item,
@@ -210,9 +214,10 @@ module.exports = class Keystone {
       schemaName = defaults.schemaName,
       authentication = defaults.authentication,
       skipAccessControl = defaults.skipAccessControl,
-    }) => this.createContext({ schemaName, authentication, skipAccessControl });
+    } = {}) => this.createContext({ schemaName, authentication, skipAccessControl });
     context.executeGraphQL = ({ context = defaults.context, query, variables }) =>
       this.executeGraphQL({ context, query, variables });
+    context.gqlNames = listKey => this.lists[listKey].gqlNames;
     return context;
   }
 
@@ -236,7 +241,9 @@ module.exports = class Keystone {
   }
 
   createAuthStrategy(options) {
-    const { type: StrategyType, list: listKey, config } = options;
+    const { type: StrategyType, list: listKey, config, hooks } = composePlugins(
+      options.plugins || []
+    )(options, { keystone: this });
     const { authType } = StrategyType;
     if (!this.auth[listKey]) {
       this.auth[listKey] = {};
@@ -248,7 +255,7 @@ module.exports = class Keystone {
       throw new Error(`List "${listKey}" does not exist.`);
     }
     this._providers.push(
-      new ListAuthProvider({ list: this.lists[listKey], authStrategy: strategy })
+      new ListAuthProvider({ list: this.lists[listKey], authStrategy: strategy, hooks })
     );
     return strategy;
   }
@@ -261,9 +268,20 @@ module.exports = class Keystone {
     if (isReservedName) {
       throw new Error(`Invalid list name "${key}". List names cannot start with an underscore.`);
     }
+    if (['Query', 'Subscription', 'Mutation'].includes(key)) {
+      throw new Error(
+        `Invalid list name "${key}". List names cannot be reserved GraphQL keywords.`
+      );
+    }
 
-    // composePlugins([f, g, h])(o, e) = h(g(f(o, e), e), e)
-    const composePlugins = fns => (o, e) => fns.reduce((acc, fn) => fn(acc, e), o);
+    // Keystone automatically adds an 'Upload' scalar type to the GQL schema. Since list output
+    // types are named after their keys, having a list name 'Upload' will clash and cause a confusing
+    // error on start.
+    if (key === 'Upload' || key === 'upload') {
+      throw new Error(
+        `Invalid list name "Upload": Built-in GraphQL types cannot be used as a list name.`
+      );
+    }
 
     const list = new List(
       key,
@@ -426,21 +444,19 @@ module.exports = class Keystone {
    * @return Promise<any> the result of executing `onConnect` as passed to the
    * constructor, or `undefined` if no `onConnect` method specified.
    */
-  async connect() {
+  async connect(args) {
     const { adapters } = this;
     const rels = this._consolidateRelationships();
     await resolveAllKeys(mapKeys(adapters, adapter => adapter.connect({ rels })));
 
     if (this.eventHandlers.onConnect) {
-      return this.eventHandlers.onConnect(this);
+      return this.eventHandlers.onConnect(this, args);
     }
   }
 
   createApolloServer({ apolloConfig = {}, schemaName, dev }) {
     // add the Admin GraphQL API
     const server = new ApolloServer({
-      maxFileSize: 200 * 1024 * 1024,
-      maxFiles: 5,
       typeDefs: this.getTypeDefs({ schemaName }),
       resolvers: this.getResolvers({ schemaName }),
       context: ({ req }) => ({
@@ -452,9 +468,8 @@ module.exports = class Keystone {
         ...this._sessionManager.getContext(req),
         req,
       }),
-      ...(process.env.ENGINE_API_KEY
+      ...(process.env.ENGINE_API_KEY || process.env.APOLLO_KEY
         ? {
-            engine: { apiKey: process.env.ENGINE_API_KEY },
             tracing: true,
           }
         : {
@@ -466,6 +481,7 @@ module.exports = class Keystone {
           }),
       formatError,
       ...apolloConfig,
+      uploads: false, // User cannot override this as it would clash with the upload middleware
     });
     this._schemas[schemaName] = server.schema;
 
@@ -527,6 +543,7 @@ module.exports = class Keystone {
       queries.length > 0 && `type Query { ${queries.join('\n')} }`,
       mutations.length > 0 && `type Mutation { ${mutations.join('\n')} }`,
       subscriptions.length > 0 && `type Subscription { ${subscriptions.join('\n')} }`,
+      'scalar Upload',
     ]
       .filter(s => s)
       .map(s => gql(s));
@@ -549,16 +566,16 @@ module.exports = class Keystone {
         Subscription: objMerge(
           this._providers.map(p => p.getSubscriptionResolvers({ schemaName }))
         ),
+        Upload: GraphQLUpload,
       },
       o => Object.entries(o).length > 0
     );
   }
 
   dumpSchema(schemaName = 'public') {
-    // The 'Upload' scalar is normally automagically added by Apollo Server
-    // See: https://blog.apollographql.com/file-uploads-with-apollo-server-2-0-5db2f3f60675
-    // Since we don't execute apollo server over this schema, we have to reinsert it.
-    return ['scalar Upload', ...this.getTypeDefs({ schemaName }).map(t => print(t))].join('\n');
+    return this.getTypeDefs({ schemaName })
+      .map(t => print(t))
+      .join('\n');
   }
 
   async _prepareMiddlewares({ dev, apps, distDir, pinoOptions, cors }) {

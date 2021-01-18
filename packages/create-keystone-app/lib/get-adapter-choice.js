@@ -1,6 +1,38 @@
 const prompts = require('prompts');
+const slugify = require('@sindresorhus/slugify');
 const { getArgs } = require('./get-args');
-const { getExampleProject } = require('./get-example-project');
+
+const adapters = {
+  MongoDB: {
+    name: 'MongoDB',
+    file: 'adapter-mongoose.js',
+    dependencies: ['@keystonejs/adapter-mongoose'],
+    description: 'Connect to a MongoDB database.',
+    defaultConfig: name => `mongodb://localhost/${slugify(name)}`,
+  },
+  PostgreSQL: {
+    name: 'PostgreSQL',
+    file: 'adapter-knex.js',
+    dependencies: ['@keystonejs/adapter-knex'],
+    description: 'Connect to a PostgreSQL database with knex.',
+    removeDependencies: ['@keystonejs/adapter-mongoose'],
+    defaultConfig: name => `postgres://localhost/${slugify(name, { separator: '_' })}`,
+  },
+  Prisma: {
+    name: 'Prisma (Experimental)',
+    file: 'adapter-prisma.js',
+    dependencies: ['@keystonejs/adapter-prisma'],
+    description: 'Connect to a PostgreSQL database with Prisma (Experimental).',
+    removeDependencies: ['@keystonejs/adapter-mongoose'],
+    defaultConfig: () => `e.g. postgres://user:password@localhost:5432/db_name`,
+  },
+};
+
+const choices = Object.entries(adapters).map(([key, value]) => ({
+  value: { ...value, key },
+  title: value.name,
+  description: value.description,
+}));
 
 let ADAPTER_CHOICE;
 
@@ -10,18 +42,16 @@ const getAdapterChoice = async () => {
     return ADAPTER_CHOICE;
   }
 
-  const project = await getExampleProject();
-
   // If the database option was provided via the CLI arguments
   const args = getArgs();
   const argValue = args['--database'];
   if (argValue) {
-    if (project.adapters[argValue]) {
-      ADAPTER_CHOICE = project.adapters[argValue];
+    if (adapters[argValue]) {
+      ADAPTER_CHOICE = adapters[argValue];
       return ADAPTER_CHOICE;
     }
 
-    const foundArg = Object.values(project.adapters).find(
+    const foundArg = Object.values(adapters).find(
       adapter => adapter.name.toLowerCase() === argValue.trim().toLowerCase()
     );
     if (foundArg) {
@@ -32,11 +62,6 @@ const getAdapterChoice = async () => {
   }
 
   // Prompt for an adapter
-  const choices = Object.keys(project.adapters).map(key => ({
-    value: project.adapters[key],
-    title: key,
-    description: project.adapters[key].description,
-  }));
 
   const response = await prompts(
     {
